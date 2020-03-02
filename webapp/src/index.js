@@ -24,6 +24,18 @@ require("./events/pending.js")(bus);
 require("./events/sendApi.js")(bus2);
 require("./events/checkRes.js")(bus3);
 
+var smtp = {
+  pool: true,
+  host: "smtp.gmail.com", //set to your host name or ip
+  port: 587, //25, 465, 587 depend on your
+  secure: false, // use SSL
+  auth: {
+    user: "booking@945holding.com", //user account
+    pass: "0df8a533a82d162726f3754cfe38a6f1" //user password
+  }
+};
+var smtpTransport = mailer.createTransport(smtp);
+
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Content-Type");
@@ -51,62 +63,125 @@ app.get("/confirm-booking", function(req, res) {
   parcelServices.saveBatch(status);
 
   for (i = 0; i < list_billing.length; i++) {
-    parcelServices.updateConfirm(status, list_billing[i].billing_no).then(function(result) {});
+    parcelServices
+      .updateConfirm(status, list_billing[i].billing_no)
+      .then(function(result) {});
   }
 
   res.send("ok");
 });
 
-app.get("/excelpath", function(req, res) {
-  
+app.get("/dhl-excel", function(req, res) {
+  var current_date = momentTimezone(new Date()).tz("Asia/Bangkok").format("YYYY-MM-DD", true);
+  var current_date_excel = momentTimezone(new Date()).tz("Asia/Bangkok").format("YYMMDDHHmmss", true);
+  var random_number = Math.floor(Math.random() * (999 - 111)) + 111;
+  var number_parcel = 0;
+
+  var filename =
+    "My945_Parcel_TDZ_" + current_date_excel + "_" + random_number + ".xlsx";
   var wb = new xl.Workbook();
-  var ws = wb.addWorksheet("Sheet 1");
+  var ws = wb.addWorksheet("945holding_" + current_date);
 
-  // ws.cell(1, 1).number(100);
-  // ws.cell(1, 2).string("some text");
-  // ws.cell(1, 3).formula("A1+A2");
-  // ws.cell(1, 4).bool(true);
-
-  ws.cell(1, 1).string("some text1");
-  ws.cell(1, 2).string("some text2");
-
-  var data = [
-    {
-      key: "a",
-      val: 1
-    },
-    {
-      key: "b",
-      val: 2
-    },
-    {
-      key: "c",
-      val: 3
+  const bgStyle = wb.createStyle({
+    fill: {
+      type: "pattern",
+      patternType: "solid",
+      bgColor: "#0D701C",
+      fgColor: "#0D701C"
     }
-  ];
-  for (i = 0; i < data.length; i++) {
-    ws.cell(i + 2, 1).string(data[i].key);
-    ws.cell(i + 2, 2).number(data[i].val);
-  }
+  });
 
-  wb.write("myfirstexcel.xlsx");
-  res.end("success");
-  // wb.write("ExcelFile.xlsx", res);
+  ws.cell(1, 1).string("Customer Confirmation Number").style(bgStyle);
+  ws.cell(1, 2).string("Recipient").style(bgStyle);
+  ws.cell(1, 3).string("AddressLine1").style(bgStyle);
+  ws.cell(1, 4).string("AddressLine2").style(bgStyle);
+  ws.cell(1, 5).string("District").style(bgStyle);
+  ws.cell(1, 6).string("State").style(bgStyle);
+  ws.cell(1, 7).string("Zip").style(bgStyle);
+  ws.cell(1, 8).string("Phone").style(bgStyle);
+  ws.cell(1, 9).string("COD Amount").style(bgStyle);
+  ws.cell(1, 10).string("Insurance Amount").style(bgStyle);
+  ws.cell(1, 11).string("Invoice(ref.)").style(bgStyle);
 
-  // res.json({ hello: "World" });
+  parcelServices.getBookingLog().then(function(data) {
+    number_parcel = data.length;
+    for (i = 0; i < data.length; i++) {
+      if (data[i].status == "fail") {
+        var cellBgStyle = wb.createStyle({
+          fill: {
+            type: "pattern",
+            patternType: "solid",
+            bgColor: "#cc0000",
+            fgColor: "#cc0000"
+          }
+        });
+      } else {
+        if ((i - 1) % 2 == 0) {
+          var cellBgStyle = wb.createStyle({
+            fill: {
+              type: "pattern",
+              patternType: "solid",
+              bgColor: "#deede3",
+              fgColor: "#deede3"
+            }
+          });
+        } else {
+          var cellBgStyle = wb.createStyle({
+            fill: {
+              type: "pattern",
+              patternType: "solid",
+              bgColor: "#c2e0ed",
+              fgColor: "#c2e0ed"
+            }
+          });
+        }
+      }
+      ws.cell(i + 2, 1).string(data[i].tracking).style(cellBgStyle);
+      ws.cell(i + 2, 2).string(data[i].receiver_name).style(cellBgStyle);
+      ws.cell(i + 2, 3).string(data[i].receiver_address).style(cellBgStyle);
+      ws.cell(i + 2, 4).string("").style(cellBgStyle);
+      ws.cell(i + 2, 5).string(data[i].DISTRICT_NAME).style(cellBgStyle);
+      ws.cell(i + 2, 6).string(data[i].PROVINCE_NAME).style(cellBgStyle);
+      ws.cell(i + 2, 7).string(data[i].zipcode).style(cellBgStyle);
+      ws.cell(i + 2, 8).string(data[i].phone).style(cellBgStyle);
+      ws.cell(i + 2, 9).number(data[i].cod_value).style(cellBgStyle);
+      ws.cell(i + 2, 10).string("").style(cellBgStyle);
+      ws.cell(i + 2, 11).string(data[i].billing_no).style(cellBgStyle);
+    }
+    wb.write(filename);
+    // res.end("success");
+
+    var mail = {
+      from: "booking@945holding.com", //from email (option)
+      to: "penquin501@gmail.com", //to email (require) cs@945holding.com
+      subject: "TDZ-My945Parcel-" + current_date + " ", //subject
+      html:
+        ` &nbsp;Good day DHL team,<br><br>\r\n\r\n&nbsp;&nbsp;&nbsp;This attachment file is My945Parcel(945Holding) booking file for dhl express at ` +
+        current_date +
+        `<br>\r\n The total number of shipments : ` +
+        number_parcel +
+        ` pcs. <br>\r\n And so, this mail was generate by automatically system.<br>\r\n&nbsp;&nbsp;&nbsp;If you have any concerned or some question, Please contact to My945Parcel Call Center 0914271551<br><br>\r\n\r\n&nbsp;Best Regards,<br>\r\n&nbsp;945Holding`, //email body
+      attachments: [
+        {
+          filename: filename,
+          path: __dirname + "/" + filename
+        }
+      ]
+    };
+
+    smtpTransport.sendMail(mail, function(error, response) {
+      smtpTransport.close();
+      if (error) {
+        //error handler
+        console.log("send email error", error);
+      } else {
+        //success handler
+        console.log("send email success");
+        res.end("send email success");
+      }
+    });
+  });
 });
-
-var smtp = {
-  pool: true,
-  host: "smtp.gmail.com", //set to your host name or ip
-  port: 587, //25, 465, 587 depend on your
-  secure: false, // use SSL
-  auth: {
-    user: "booking@945holding.com", //user account
-    pass: "0df8a533a82d162726f3754cfe38a6f1" //user password
-  }
-};
-var smtpTransport = mailer.createTransport(smtp);
 
 app.get("/send-email", function(req, res) {
   var mail = {
@@ -172,7 +247,7 @@ sendApi = async t => {
   //---------------
   await parcelServices.prepareRawData().then(function(data) {
     if (data !== null) {
-      for(i=0;i<data.length;i++){
+      for (i = 0; i < data.length; i++) {
         bus2.emit("booking", data[i].billing_no);
       }
     }
@@ -196,7 +271,7 @@ checkResponse = async t => {
   await parcelServices.listResponseNotBooked().then(function(data) {
     // console.log(data);
     if (data !== null) {
-      for(i=0;i<data.length;i++){
+      for (i = 0; i < data.length; i++) {
         bus3.emit("check_res", data[i]);
       }
     }
@@ -221,7 +296,7 @@ checkStatusBilling = async t => {
   await parcelServices.listBillingNotBooked().then(function(data) {
     // console.log(data);
     if (data !== null) {
-      for(i=0;i<data.length;i++){
+      for (i = 0; i < data.length; i++) {
         bus3.emit("check_status_billing", data[i]);
       }
     }
@@ -247,6 +322,6 @@ main = async () => {
   q_check_status_billing();
 };
 
-main();
+// main();
 
 app.listen(port, () => console.log(`listening on port ${port}!`));

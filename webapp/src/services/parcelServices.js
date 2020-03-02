@@ -100,4 +100,26 @@ module.exports = {
       });
     });
   },
+  getBookingLog: () => {
+    var sqlBilling = "SELECT bb.tracking, bb.status, bi.tracking, bi.billing_no,bi.cod_value,br.receiver_name,br.phone,br.receiver_address,d.DISTRICT_CODE,d.DISTRICT_NAME,a.AMPHUR_CODE,a.AMPHUR_NAME,p.PROVINCE_CODE,p.PROVINCE_NAME,z.zipcode "+
+    "FROM booking_tracking_batch bb "+
+    "LEFT JOIN billing_item_test bi ON bb.tracking=bi.tracking "+
+    "LEFT JOIN billing_receiver_info_test br ON bi.tracking=br.tracking "+
+    "LEFT JOIN postinfo_district d on br.district_id=d.DISTRICT_ID and br.amphur_id=d.AMPHUR_ID and br.province_id=d.PROVINCE_ID "+
+    "LEFT JOIN postinfo_amphur a on d.amphur_id=a.AMPHUR_ID "+
+    "LEFT JOIN postinfo_province p on d.province_id=p.PROVINCE_ID "+
+    "LEFT JOIN postinfo_zipcodes z on d.DISTRICT_CODE=z.district_code "+
+    "WHERE Date(bb.send_record_at)='2020-02-29'";
+    var data = ["booking"];
+    return new Promise(function(resolve, reject) {
+      connection.query(sqlBilling, data, (error, results, fields) => {
+        if (error === null) {
+          resolve(results);
+        } else {
+          console.log("getBookingLog error=>", error);
+          resolve(null);
+        }
+      });
+    });
+  },
 };
