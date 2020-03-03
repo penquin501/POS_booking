@@ -26,7 +26,7 @@ module.exports = bus => {
       status = "fail";
     }
 
-    let updateReceiver = "UPDATE billing_receiver_info_test SET booking_status=?,booking_date=? WHERE tracking=?";
+    let updateReceiver = "UPDATE billing_receiver_info SET booking_status=?,booking_date=? WHERE tracking=?";
     let dataReceiver = [booking_status, new Date(), msg.tracking];
     connection.query(updateReceiver, dataReceiver, (err, results) => {});
 
@@ -38,7 +38,7 @@ module.exports = bus => {
   bus.on("check_status_billing", msg => {
     console.log("check_status_billing", msg.billing_no);
     let sqlItem =
-      "SELECT bi.billing_no,br.booking_status FROM billing_item_test bi LEFT Join billing_receiver_info_test br on bi.tracking =br.tracking "+
+      "SELECT bi.billing_no,br.booking_status FROM billing_item bi LEFT Join billing_receiver_info br on bi.tracking =br.tracking "+
       "WHERE bi.billing_no=? and (br.status != 'cancel' or br.status is null)";
     let data = [msg.billing_no];
     connection.query(sqlItem, data, (err, results) => {
@@ -61,7 +61,7 @@ module.exports = bus => {
   bus.on("update_booked", msg => {
     console.log(msg);
     var billing_no = msg;
-    let sqlBilling = "UPDATE billing_test SET status=? WHERE billing_no=?";
+    let sqlBilling = "UPDATE billing SET status=? WHERE billing_no=?";
     let data = ["booked", billing_no];
     connection.query(sqlBilling, data, (err, results) => {});
   });

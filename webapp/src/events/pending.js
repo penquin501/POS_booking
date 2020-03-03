@@ -5,7 +5,7 @@ module.exports = bus => {
   bus.on("prepare_check_data", msg=>{
     console.log("checking....",msg.billingNo);
 
-    let updateBilling = "UPDATE billing_test SET status=? WHERE billing_no=?";
+    let updateBilling = "UPDATE billing SET status=? WHERE billing_no=?";
     let data = ['checking', msg.billingNo];
     connection.query(updateBilling, data, (err, results) => {
       
@@ -20,8 +20,8 @@ module.exports = bus => {
     var sqlItem =
       "SELECT bi.billing_no,bi.tracking,bi.zipcode as bi_zipcode,bi.size_id,bi.parcel_type as bi_type,bi.cod_value,br.parcel_type as br_type,br.receiver_name,br.phone,br.receiver_address," +
       "d.DISTRICT_NAME,a.AMPHUR_NAME,p.PROVINCE_NAME,z.zipcode " +
-      "FROM billing_item_test bi " +
-      "LEFT JOIN billing_receiver_info_test br ON bi.tracking=br.tracking " +
+      "FROM billing_item bi " +
+      "LEFT JOIN billing_receiver_info br ON bi.tracking=br.tracking " +
       "LEFT JOIN postinfo_district d ON br.district_id=d.DISTRICT_ID AND br.amphur_id=d.AMPHUR_ID AND br.province_id=d.PROVINCE_ID " +
       "LEFT JOIN postinfo_amphur a ON d.amphur_id=a.AMPHUR_ID " +
       "LEFT JOIN postinfo_province p ON d.province_id=p.PROVINCE_ID " +
@@ -89,13 +89,13 @@ module.exports = bus => {
   });
   bus.on("set_ready",msg=>{
     console.log("set_ready", msg);
-    let updateBilling = "UPDATE billing_test SET status=? WHERE billing_no=?";
+    let updateBilling = "UPDATE billing SET status=? WHERE billing_no=?";
     let data = ['ready', msg];
     connection.query(updateBilling, data, (err, results) => {});
   });
   bus.on("set_back_complete",msg=>{
     console.log("set_back_complete", msg);
-    let updateBilling = "UPDATE billing_test SET status=? WHERE billing_no=?";
+    let updateBilling = "UPDATE billing SET status=? WHERE billing_no=?";
     let data = ['complete', msg];
     connection.query(updateBilling, data, (err, results) => {});
   });

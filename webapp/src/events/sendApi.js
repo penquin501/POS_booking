@@ -9,7 +9,7 @@ module.exports = bus => {
     var billing_no = msg;
     console.log("booking....", billing_no);
 
-    let updateBilling = "UPDATE billing_test SET status=? WHERE billing_no=?";
+    let updateBilling = "UPDATE billing SET status=? WHERE billing_no=?";
     let data = ["booking", billing_no];
     connection.query(updateBilling, data, (err, results) => {
       if (results.affectedRows > 0) {
@@ -24,8 +24,8 @@ module.exports = bus => {
     let sqlItem =
       "SELECT bi.billing_no,bi.tracking,bi.size_id,bi.parcel_type,bi.cod_value,br.receiver_name,br.phone,br.receiver_address," +
       "d.DISTRICT_NAME,a.AMPHUR_NAME,p.PROVINCE_NAME,z.zipcode,s.sold_to_account_id,s.pickup_account_id,s.customer_account_id " +
-      "FROM billing_item_test bi " +
-      "LEFT JOIN billing_receiver_info_test br ON bi.tracking=br.tracking " +
+      "FROM billing_item bi " +
+      "LEFT JOIN billing_receiver_info br ON bi.tracking=br.tracking " +
       "LEFT JOIN postinfo_district d ON br.district_id=d.DISTRICT_ID AND br.amphur_id=d.AMPHUR_ID AND br.province_id=d.PROVINCE_ID " +
       "LEFT JOIN postinfo_amphur a ON d.amphur_id=a.AMPHUR_ID " +
       "LEFT JOIN postinfo_province p ON d.province_id=p.PROVINCE_ID " +
@@ -224,7 +224,7 @@ module.exports = bus => {
 
   bus.on("send_api", msg => {
     console.log("send_api", JSON.stringify(msg));
-    bus.emit("prepare_json", msg.data);
+    bus.emit("prepare_json", msg);
     // var tracking = msg.tracking;
     var data={};
     request(
@@ -270,7 +270,7 @@ module.exports = bus => {
     connection.query(trackingBatch, data, (err, results) => {});
   });
   bus.on("prepare_json", msg => {
-    console.log("prepare_json", msg.result);
+    console.log("prepare_json", msg);
     let trackingBatch = "INSERT INTO booking_tracking_batch(tracking, status, send_record_at, prepare_json) VALUES (?, ?, ?, ?)";
     let data = [msg.tracking, 'send api', new Date(), JSON.stringify(msg.data)];
     connection.query(trackingBatch, data, (err, results) => {});

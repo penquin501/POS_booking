@@ -63,17 +63,16 @@ app.get("/confirm-booking", function(req, res) {
   parcelServices.saveBatch(status);
 
   for (i = 0; i < list_billing.length; i++) {
-    parcelServices
-      .updateConfirm(status, list_billing[i].billing_no)
-      .then(function(result) {});
+    parcelServices.updateConfirm(status, list_billing[i].billing_no).then(function(result) {});
   }
 
   res.send("ok");
 });
 
 app.get("/dhl-excel", function(req, res) {
-  var current_date = momentTimezone(new Date()).tz("Asia/Bangkok").format("YYYY-MM-DD", true);
-  var current_date_excel = momentTimezone(new Date()).tz("Asia/Bangkok").format("YYMMDDHHmmss", true);
+  var date_now=new Date();
+  var current_date = momentTimezone(date_now).tz("Asia/Bangkok").format("YYYY-MM-DD", true);
+  var current_date_excel = momentTimezone(date_now).tz("Asia/Bangkok").format("YYMMDDHHmmss", true);
   var random_number = Math.floor(Math.random() * (999 - 111)) + 111;
   var number_parcel = 0;
 
@@ -322,6 +321,6 @@ main = async () => {
   q_check_status_billing();
 };
 
-// main();
+main();
 
 app.listen(port, () => console.log(`listening on port ${port}!`));

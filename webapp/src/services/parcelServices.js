@@ -2,6 +2,7 @@ const connection = require("../env/db.js");
 const bodyParser = require("body-parser");
 const request = require("request");
 const moment = require("moment");
+const momentTimezone = require("moment-timezone");
 moment.locale("th");
 
 module.exports = {
@@ -14,10 +15,10 @@ module.exports = {
   },
   updateConfirm: (status, billing_no) => {
 
-    var sqlBillingNotSend = "SELECT billing_no FROM billing_test WHERE status = ?";
+    var sqlBillingNotSend = "SELECT billing_no FROM billing WHERE status = ?";
     var data=["ready", billing_no];
 
-    var sqlUpdateStatus = "UPDATE billing_test SET status=? WHERE billing_no = ?";
+    var sqlUpdateStatus = "UPDATE billing SET status=? WHERE billing_no = ?";
     var dataStatus=[status, billing_no];
 
     return new Promise(function(resolve, reject) {
@@ -30,7 +31,7 @@ module.exports = {
   },
   checkDataPrepare: () => {
 
-    var sqlBillingNotSend = "SELECT billing_no FROM billing_test WHERE status = ?";
+    var sqlBillingNotSend = "SELECT billing_no FROM billing WHERE status = ?";
     var data = ["ready"];
     return new Promise(function(resolve, reject) {
       connection.query(sqlBillingNotSend, data, (error, results, fields) => {
@@ -45,7 +46,7 @@ module.exports = {
   },
   checkCompleteData: () => {
 
-    var sqlBillingComplete = "SELECT billing_no FROM billing_test WHERE status = ?";
+    var sqlBillingComplete = "SELECT billing_no FROM billing WHERE status = ?";
     var data = ["complete"];
     return new Promise(function(resolve, reject) {
       connection.query(sqlBillingComplete, data, (error, results, fields) => {
@@ -59,7 +60,7 @@ module.exports = {
     });
   },
   prepareRawData: () => {
-    var sqlBillingConfirmed = "SELECT billing_no FROM billing_test WHERE status = ?";
+    var sqlBillingConfirmed = "SELECT billing_no FROM billing WHERE status = ?";
     var data = ["confirm"];
     return new Promise(function(resolve, reject) {
       connection.query(sqlBillingConfirmed, data, (error, results, fields) => {
@@ -87,7 +88,7 @@ module.exports = {
     });
   },
   listBillingNotBooked: () => {
-    var sqlBilling = "SELECT billing_no FROM billing_test WHERE status = ?";
+    var sqlBilling = "SELECT billing_no FROM billing WHERE status = ?";
     var data = ["booking"];
     return new Promise(function(resolve, reject) {
       connection.query(sqlBilling, data, (error, results, fields) => {
@@ -101,16 +102,17 @@ module.exports = {
     });
   },
   getBookingLog: () => {
+    var current_date = momentTimezone(new Date()).tz("Asia/Bangkok").format("YYYY-MM-DD", true);
     var sqlBilling = "SELECT bb.tracking, bb.status, bi.tracking, bi.billing_no,bi.cod_value,br.receiver_name,br.phone,br.receiver_address,d.DISTRICT_CODE,d.DISTRICT_NAME,a.AMPHUR_CODE,a.AMPHUR_NAME,p.PROVINCE_CODE,p.PROVINCE_NAME,z.zipcode "+
     "FROM booking_tracking_batch bb "+
-    "LEFT JOIN billing_item_test bi ON bb.tracking=bi.tracking "+
-    "LEFT JOIN billing_receiver_info_test br ON bi.tracking=br.tracking "+
-    "LEFT JOIN postinfo_district d on br.district_id=d.DISTRICT_ID and br.amphur_id=d.AMPHUR_ID and br.province_id=d.PROVINCE_ID "+
-    "LEFT JOIN postinfo_amphur a on d.amphur_id=a.AMPHUR_ID "+
-    "LEFT JOIN postinfo_province p on d.province_id=p.PROVINCE_ID "+
-    "LEFT JOIN postinfo_zipcodes z on d.DISTRICT_CODE=z.district_code "+
-    "WHERE Date(bb.send_record_at)='2020-02-29'";
-    var data = ["booking"];
+    "LEFT JOIN billing_item bi ON bb.tracking=bi.tracking "+
+    "LEFT JOIN billing_receiver_info br ON bi.tracking=br.tracking "+
+    "LEFT JOIN postinfo_district d ON br.district_id=d.DISTRICT_ID AND br.amphur_id=d.AMPHUR_ID AND br.province_id=d.PROVINCE_ID "+
+    "LEFT JOIN postinfo_amphur a ON d.amphur_id=a.AMPHUR_ID "+
+    "LEFT JOIN postinfo_province p ON d.province_id=p.PROVINCE_ID "+
+    "LEFT JOIN postinfo_zipcodes z ON d.DISTRICT_CODE=z.district_code "+
+    "WHERE Date(bb.send_record_at)=?";
+    var data = [current_date];
     return new Promise(function(resolve, reject) {
       connection.query(sqlBilling, data, (error, results, fields) => {
         if (error === null) {

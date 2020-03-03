@@ -5,6 +5,10 @@ var connection = mysql.createPool({
     user: 'parceldev',
     password: '123456',
     database: 'parcel',
+    // host: '178.128.80.22',
+    // user: 'admin',
+    // password: '4a04047f35404a37b150bc21e69de4c6',
+    // database: 'parcel',
     debug : false,
     timezone : '+07:00'
 });
