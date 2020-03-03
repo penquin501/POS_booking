@@ -56,7 +56,7 @@ app.get("/new-booking", function(req, res) {
   });
 });
 
-app.get("/confirm-booking", function(req, res) {
+app.post("/confirm-booking", function(req, res) {
   let status = "confirm";
   let list_billing = req.body.list_billing;
 
