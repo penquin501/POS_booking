@@ -1,6 +1,0 @@
-version: "2.0"
-services:
-  webapp:
-    build:
-      context: webapp
-    # image: sunteen-reg.ut9.me:5000/workshop/main-parcel-tool
