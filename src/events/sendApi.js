@@ -34,7 +34,7 @@ module.exports = bus => {
       "WHERE bi.billing_no=? AND (br.status != 'cancel' or status is null)";
     let data = [billing_no];
     connection.query(sqlItem, data, (err, results) => {
-      console.log(results);
+      // console.log(results);
       for (i = 0; i < results.length; i++) {
         var info = {
           data: results[i]
@@ -66,7 +66,7 @@ module.exports = bus => {
   });
 
   bus.on("set_json", msg => {
-    console.log("set_json", msg.data.data);
+    // console.log("set_json", msg.data.data);
 
     let data = msg.data.data;
 
@@ -220,12 +220,12 @@ module.exports = bus => {
         data:dataJsonDHL
     }
     bus.emit("send_api", info);
+    bus.emit("prepare_json", msg);
   });
 
   bus.on("send_api", msg => {
-    console.log("send_api", JSON.stringify(msg));
-    bus.emit("prepare_json", msg);
-    // var tracking = msg.tracking;
+    console.log("send_api", msg.tracking);
+
     var data={};
     request(
       {
@@ -235,8 +235,6 @@ module.exports = bus => {
         json: true
       },
       (err, res, body) => {
-        console.log(res.body);
-        
         if (err === null) {
           if (res.statusCode == 200) {
             data = {
@@ -264,13 +262,13 @@ module.exports = bus => {
     );
   });
   bus.on("response", msg => {
-    console.log("response_success", msg.result);
+    console.log("response", msg.result);
     let trackingBatch = "UPDATE booking_tracking_batch SET status=?,response_record_at=?,res_json=? WHERE tracking=?";
     let data = [msg.status, new Date(), JSON.stringify(msg.result),msg.tracking];
     connection.query(trackingBatch, data, (err, results) => {});
   });
   bus.on("prepare_json", msg => {
-    console.log("prepare_json", msg);
+    console.log("prepare_json", msg.tracking);
     let trackingBatch = "INSERT INTO booking_tracking_batch(tracking, status, send_record_at, prepare_json) VALUES (?, ?, ?, ?)";
     let data = [msg.tracking, 'send api', new Date(), JSON.stringify(msg.data)];
     connection.query(trackingBatch, data, (err, results) => {});

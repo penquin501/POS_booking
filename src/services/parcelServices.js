@@ -61,7 +61,7 @@ module.exports = {
   },
   prepareRawData: () => {
     var sqlBillingConfirmed = "SELECT billing_no FROM billing WHERE status = ?";
-    var data = ["confirm"];
+    var data = ["ready"];
     return new Promise(function(resolve, reject) {
       connection.query(sqlBillingConfirmed, data, (error, results, fields) => {
         if (error === null) {
@@ -103,7 +103,8 @@ module.exports = {
   },
   getBookingLog: () => {
     var current_date = momentTimezone(new Date()).tz("Asia/Bangkok").format("YYYY-MM-DD", true);
-    var sqlBilling = "SELECT bb.tracking, bb.status, bi.tracking, bi.billing_no,bi.cod_value,br.receiver_name,br.phone,br.receiver_address,d.DISTRICT_CODE,d.DISTRICT_NAME,a.AMPHUR_CODE,a.AMPHUR_NAME,p.PROVINCE_CODE,p.PROVINCE_NAME,z.zipcode "+
+    var sqlBilling = "SELECT bb.tracking, bb.status, bi.tracking, bi.billing_no,bi.cod_value,br.receiver_name,br.phone,br.receiver_address,"+
+    "d.DISTRICT_CODE,d.DISTRICT_NAME,a.AMPHUR_CODE,a.AMPHUR_NAME,p.PROVINCE_CODE,p.PROVINCE_NAME,z.zipcode "+
     "FROM booking_tracking_batch bb "+
     "LEFT JOIN billing_item bi ON bb.tracking=bi.tracking "+
     "LEFT JOIN billing_receiver_info br ON bi.tracking=br.tracking "+

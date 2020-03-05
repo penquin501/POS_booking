@@ -8,7 +8,7 @@ var mailer = require("nodemailer");
 const path = require("path");
 const app = express();
 const moment = require("moment");
-const momentTimezone = require("moment-timezone");
+const m = require("moment-timezone");
 var events = require("events");
 
 const port = process.env.PORT || 3200;
@@ -72,8 +72,8 @@ app.post("/confirm-booking", function(req, res) {
 
 app.get("/dhl-excel", function(req, res) {
   var date_now=new Date();
-  var current_date = momentTimezone(date_now).tz("Asia/Bangkok").format("YYYY-MM-DD", true);
-  var current_date_excel = momentTimezone(date_now).tz("Asia/Bangkok").format("YYMMDDHHmmss", true);
+  var current_date = m(date_now).tz("Asia/Bangkok").format("YYYY-MM-DD", true);
+  var current_date_excel = m(date_now).tz("Asia/Bangkok").format("YYMMDDHHmmss", true);
   var random_number = Math.floor(Math.random() * (999 - 111)) + 111;
   var number_parcel = 0;
 
@@ -218,6 +218,7 @@ var execute_interval = 10 * 1000;
 var hot_delay = 1000;
 var task_number = 0;
 checkData = async t => {
+  console.log("%s   Start execute checkData", m().format(t_format));
   //---------------
   await parcelServices.checkCompleteData().then(function(data) {
     if (data !== null) {
@@ -230,6 +231,7 @@ checkData = async t => {
     }
   });
   //---------------
+  console.log("%s   End execute checkData", m().format(t_format));
 };
 
 q_check_prepare_data = async () => {
@@ -239,11 +241,14 @@ q_check_prepare_data = async () => {
   //---------------
   let end_time = new Date().getTime();
   let actual_execute_time = end_time - start_time;
+  console.log("%s Actual Execute Time = %d",m().format(t_format),actual_execute_time);
   let delay_time = Math.max(execute_interval - actual_execute_time, hot_delay);
+  console.log("%s Delay Time = %d", m().format(t_format), delay_time);
   setTimeout(q_check_prepare_data, delay_time);
 };
 ////////////////////////////////////////////////////////send DHL api//////////////////////////////////////////////////////////
 sendApi = async t => {
+  console.log("%s   Start execute sendApi", m().format(t_format));
   //---------------
   await parcelServices.prepareRawData().then(function(data) {
     if (data !== null) {
@@ -253,6 +258,7 @@ sendApi = async t => {
     }
   });
   //---------------
+  console.log("%s   End execute sendApi", m().format(t_format));
 };
 
 q_send_api = async () => {
@@ -262,14 +268,16 @@ q_send_api = async () => {
   //---------------
   let end_time = new Date().getTime();
   let actual_execute_time = end_time - start_time;
+  console.log("%s Actual Execute Time = %d",m().format(t_format),actual_execute_time);
   let delay_time = Math.max(execute_interval - actual_execute_time, hot_delay);
+  console.log("%s Delay Time = %d", m().format(t_format), delay_time);
   setTimeout(q_send_api, delay_time);
 };
 ////////////////////////////////////////////////////////check response//////////////////////////////////////////////////////////
 checkResponse = async t => {
+  console.log("%s   Start execute checkResponse", m().format(t_format));
   //---------------
   await parcelServices.listResponseNotBooked().then(function(data) {
-    // console.log(data);
     if (data !== null) {
       for (i = 0; i < data.length; i++) {
         bus3.emit("check_res", data[i]);
@@ -277,6 +285,7 @@ checkResponse = async t => {
     }
   });
   //---------------
+  console.log("%s   End execute checkResponse", m().format(t_format));
 };
 
 q_check_response = async () => {
@@ -286,12 +295,15 @@ q_check_response = async () => {
   //---------------
   let end_time = new Date().getTime();
   let actual_execute_time = end_time - start_time;
+  console.log("%s Actual Execute Time = %d",m().format(t_format),actual_execute_time);
   let delay_time = Math.max(execute_interval - actual_execute_time, hot_delay);
+  console.log("%s Delay Time = %d", m().format(t_format), delay_time);
   setTimeout(q_check_response, delay_time);
 };
 
 ////////////////////////////////////////////////////////check booked billing//////////////////////////////////////////////////////////
 checkStatusBilling = async t => {
+  console.log("%s   Start execute checkStatusBilling", m().format(t_format));
   //---------------
   await parcelServices.listBillingNotBooked().then(function(data) {
     // console.log(data);
@@ -302,6 +314,7 @@ checkStatusBilling = async t => {
     }
   });
   //---------------
+  console.log("%s   End execute checkStatusBilling", m().format(t_format));
 };
 
 q_check_status_billing = async () => {
@@ -311,7 +324,9 @@ q_check_status_billing = async () => {
   //---------------
   let end_time = new Date().getTime();
   let actual_execute_time = end_time - start_time;
+  console.log("%s Actual Execute Time = %d",m().format(t_format),actual_execute_time);
   let delay_time = Math.max(execute_interval - actual_execute_time, hot_delay);
+  console.log("%s Delay Time = %d", m().format(t_format), delay_time);
   setTimeout(q_check_status_billing, delay_time);
 };
 
