@@ -333,7 +333,7 @@ q_check_status_billing = async () => {
 main = async () => {
   q_check_prepare_data();
   q_send_api();
-  q_check_response();
+  // q_check_response();
   q_check_status_billing();
 };
 

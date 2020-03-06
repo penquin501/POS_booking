@@ -220,7 +220,7 @@ module.exports = bus => {
         data:dataJsonDHL
     }
     bus.emit("send_api", info);
-    bus.emit("prepare_json", msg);
+    // bus.emit("prepare_json", msg);
   });
 
   bus.on("send_api", msg => {
@@ -258,19 +258,37 @@ module.exports = bus => {
               
         }
         bus.emit("response", data);
+        bus.emit("response_log", data);
       }
     );
   });
+  bus.on("response_log", msg => {
+    console.log("response_log %s ====> %s", msg.tracking,msg.status);
+    let trackingBatch = "INSERT INTO booking_tracking_batch(tracking, status, send_record_at) VALUES (?, ?, ?)";
+    let data = [msg.tracking,msg.status, new Date()];
+    connection.query(trackingBatch, data, (err, results) => {});
+  });
+
   bus.on("response", msg => {
-    console.log("response", msg.result);
-    let trackingBatch = "UPDATE booking_tracking_batch SET status=?,response_record_at=?,res_json=? WHERE tracking=?";
-    let data = [msg.status, new Date(), JSON.stringify(msg.result),msg.tracking];
-    connection.query(trackingBatch, data, (err, results) => {});
+    console.log("response", msg.tracking);
+    var responseCode = msg.result.manifestResponse.bd.responseStatus.code;
+    var responseMessage = msg.result.manifestResponse.bd.responseStatus.message;
+    console.log("responseCode %s ====> %s", msg.tracking,responseCode);
+    var booking_status = 0;
+
+    if (msg.status == "pass") {
+      if (responseCode == 200 && responseMessage == "SUCCESS") {
+        booking_status = 100;
+      } else {
+        booking_status = 5;
+      }
+    } else {
+      booking_status = 5;
+    }
+
+    let updateReceiver = "UPDATE billing_receiver_info SET booking_status=?,booking_date=? WHERE tracking=?";
+    let dataReceiver = [booking_status, new Date(), msg.tracking];
+    connection.query(updateReceiver, dataReceiver, (err, results) => {});
   });
-  bus.on("prepare_json", msg => {
-    console.log("prepare_json", msg.tracking);
-    let trackingBatch = "INSERT INTO booking_tracking_batch(tracking, status, send_record_at, prepare_json) VALUES (?, ?, ?, ?)";
-    let data = [msg.tracking, 'send api', new Date(), JSON.stringify(msg.data)];
-    connection.query(trackingBatch, data, (err, results) => {});
-  });
+
 };
