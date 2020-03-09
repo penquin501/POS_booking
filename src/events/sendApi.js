@@ -22,14 +22,13 @@ module.exports = bus => {
     var billing_no = msg;
 
     let sqlItem =
-      "SELECT bi.billing_no,bi.tracking,bi.size_id,bi.parcel_type,bi.cod_value,br.receiver_name,br.phone,br.receiver_address," +
-      "d.DISTRICT_NAME,a.AMPHUR_NAME,p.PROVINCE_NAME,z.zipcode,s.sold_to_account_id,s.pickup_account_id,s.customer_account_id " +
+      "SELECT bi.billing_no,bi.tracking,bi.size_id,bi.parcel_type as bi_parcel_type,bi.cod_value,br.receiver_name,br.phone,br.receiver_address," +
+      "d.DISTRICT_NAME,a.AMPHUR_NAME,p.PROVINCE_NAME,br.zipcode,s.sold_to_account_id,s.pickup_account_id,s.customer_account_id " +
       "FROM billing_item bi " +
       "LEFT JOIN billing_receiver_info br ON bi.tracking=br.tracking " +
       "LEFT JOIN postinfo_district d ON br.district_id=d.DISTRICT_ID AND br.amphur_id=d.AMPHUR_ID AND br.province_id=d.PROVINCE_ID " +
-      "LEFT JOIN postinfo_amphur a ON d.amphur_id=a.AMPHUR_ID " +
-      "LEFT JOIN postinfo_province p ON d.province_id=p.PROVINCE_ID " +
-      "LEFT JOIN postinfo_zipcodes z ON d.DISTRICT_CODE=z.district_code " +
+      "LEFT JOIN postinfo_amphur a ON br.amphur_id=a.AMPHUR_ID " +
+      "LEFT JOIN postinfo_province p ON br.province_id=p.PROVINCE_ID " +
       "LEFT JOIN size_info s ON bi.size_id=s.size_id " +
       "WHERE bi.billing_no=? AND (br.status != 'cancel' or status is null)";
     let data = [billing_no];
@@ -84,196 +83,126 @@ module.exports = bus => {
     var address3 = "";
     let listAddress = [];
 
-    if (address.length < 60) {
-      for (i = 0; i < address.length; i++) {
-        address1 += address[i];
-      }
-      listAddress.push(address1);
+    if (address.length > 150) {
+      addressSub = address.substring(0, 150);
+      address1 = addressSub.substring(0, 60);
+      address2 = addressSub.substring(60, 120);
+      address3 = addressSub.substring(120, 150);
     } else {
-      if (address.length - 60 < 60) {
-        for (i = 0; i < 60; i++) {
-          address1 += address[i];
-        }
-        listAddress.push(address1);
-
-        for (j = 0; j < address.length - address1.length; j++) {
-          address2 += address[j + 60];
-        }
-        listAddress.push(address2);
-      } else {
-        if (address.length - 120 < 30) {
-          for (i = 0; i < 60; i++) {
-            address1 += address[i];
-          }
-          listAddress.push(address1);
-
-          for (j = 0; j < 60; j++) {
-            address2 += address[j + 60];
-          }
-          listAddress.push(address2);
-
-          for (
-            k = 0;
-            k < address.length - (address1.length + address2.length);
-            k++
-          ) {
-            address3 += address[k + 120];
-          }
-          listAddress.push(address3);
-        } else {
-          for (i = 0; i < 60; i++) {
-            address1 += address[i];
-          }
-          listAddress.push(address1);
-
-          for (j = 0; j < 60; j++) {
-            address2 += address[j + 60];
-          }
-          listAddress.push(address2);
-
-          for (k = 0; k < 30; k++) {
-            address3 += address[k + 120];
-          }
-          listAddress.push(address3);
-        }
-      }
+      address1 = address.substring(0, 60);
+      address2 = address.substring(60, 120);
+      address3 = address.substring(120, 150);
     }
-    var dataJsonDHL ={};
-    if(data.bi_parcel_type == "COD") {
-        dataJsonDHL = {
-            manifestRequest: {
-              hdr: {
-                messageType: "SHIPMENT",
-                messageDateTime: momentTimezone(new Date()).tz("Asia/Bangkok"),
-                accessToken: msg.token.dhl_token,
-                messageVersion: "1.3"
-              },
-              bd: {
-                customerAccountId: parseInt(data.customer_account_id),
-                pickupAccountId: data.pickup_account_id,
-                soldToAccountId: data.sold_to_account_id,
-                shipmentItems: [
-                  {
-                    shipmentID: data.tracking,
-                    totalWeight: 200,
-                    totalWeightUOM: "g",
-                    productCode: "PDO",
-                    codValue: Math.floor(codValue).toFixed(2),
-                    currency: "THB",
-                    consigneeAddress: {
-                      name: data.receiver_name,
-                      address1: listAddress[0],
-                      address2: listAddress[1] in listAddress ? listAddress[1] : data.DISTRICT_NAME,
-                      address3: listAddress[2] in listAddress ? listAddress[2] : "-",
-                      state: data.PROVINCE_NAME,
-                      district: data.AMPHUR_NAME,
-                      postCode: data.zipcode,
-                      country: "TH",
-                      phone: data.phone
-                    }
-                  }
-                ]
+    listAddress.push(address1, address2, address3);
+    var dataJsonDHL = {
+      manifestRequest: {
+        hdr: {
+          messageType: "SHIPMENT",
+          messageDateTime: momentTimezone(new Date()).tz("Asia/Bangkok"),
+          accessToken: msg.token.dhl_token,
+          messageVersion: "1.3"
+        },
+        bd: {
+          customerAccountId: parseInt(data.customer_account_id),
+          pickupAccountId: data.pickup_account_id,
+          soldToAccountId: data.sold_to_account_id,
+          shipmentItems: [
+            {
+              shipmentID: data.tracking,
+              totalWeight: 200,
+              totalWeightUOM: "g",
+              productCode: "PDO",
+              // codValue: Math.floor(codValue).toFixed(2),
+              currency: "THB",
+              consigneeAddress: {
+                name: data.receiver_name,
+                address1: listAddress[0],
+                address2:
+                  listAddress[1] in listAddress
+                    ? listAddress[1]
+                    : data.DISTRICT_NAME,
+                address3: listAddress[2] in listAddress ? listAddress[2] : "-",
+                state: data.PROVINCE_NAME,
+                district: data.AMPHUR_NAME,
+                postCode: data.zipcode,
+                country: "TH",
+                phone: data.phone
               }
             }
-          };
-    } else {
-        dataJsonDHL = {
-            manifestRequest: {
-              hdr: {
-                messageType: "SHIPMENT",
-                messageDateTime: momentTimezone(new Date()).tz("Asia/Bangkok"),
-                accessToken: msg.token.dhl_token,
-                messageVersion: "1.3"
-              },
-              bd: {
-                customerAccountId: parseInt(data.customer_account_id),
-                pickupAccountId: data.pickup_account_id,
-                soldToAccountId: data.sold_to_account_id,
-                shipmentItems: [
-                  {
-                    shipmentID: data.tracking,
-                    totalWeight: 200,
-                    totalWeightUOM: "g",
-                    productCode: "PDO",
-                    // codValue: data.bi_parcel_type == "COD"? Math.floor(codValue).toFixed(2): 0.00,
-                    currency: "THB",
-                    consigneeAddress: {
-                      name: data.receiver_name,
-                      address1: listAddress[0],
-                      address2: listAddress[1] in listAddress ? listAddress[1] : data.DISTRICT_NAME,
-                      address3: listAddress[2] in listAddress ? listAddress[2] : "-",
-                      state: data.PROVINCE_NAME,
-                      district: data.AMPHUR_NAME,
-                      postCode: data.zipcode,
-                      country: "TH",
-                      phone: data.phone
-                    }
-                  }
-                ]
-              }
-            }
-          };
+          ]
+        }
+      }
+    };
+    if (data.bi_parcel_type == "COD") {
+      dataJsonDHL.manifestRequest.bd.shipmentItems[0].codValue = Math.floor(
+        data.cod_value
+      ).toFixed(2);
     }
 
-    var info={
-        tracking:data.tracking,
-        data:dataJsonDHL
-    }
+    var info = {
+      tracking: data.tracking,
+      data: dataJsonDHL
+    };
+    // console.log(JSON.stringify(info));
     bus.emit("send_api", info);
-    // bus.emit("prepare_json", msg);
+    bus.emit("response_log", info);
+  });
+
+  bus.on("response_log", msg => {
+    console.log("response_log %s", msg);
+    let trackingBatch =
+      "INSERT INTO booking_tracking_batch(tracking, status, send_record_at, prepare_json) VALUES (?, ?, ?, ?)";
+    let data = [msg.tracking, "booking", new Date(), JSON.stringify(msg.data)];
+    connection.query(trackingBatch, data, (err, results) => {});
   });
 
   bus.on("send_api", msg => {
     console.log("send_api", msg.tracking);
 
-    var data={};
+    var data = {};
     request(
       {
-        url: "https://api.dhlecommerce.dhl.com/rest/v3/Shipment",
+        // url: "https://api.dhlecommerce.dhl.com/rest/v3/Shipment",
+        url: "https://tool-uat.945parcel.com/test-dhl-response",
         method: "POST",
         body: msg.data,
         json: true
       },
       (err, res, body) => {
         if (err === null) {
+          console.log(res.statusCode);
           if (res.statusCode == 200) {
             data = {
-              status:'pass',
+              status: "pass",
               result: res.body,
               tracking: msg.tracking
             };
           } else {
             data = {
-              status:'uncertain',
+              status: "uncertain",
               result: res.body,
               tracking: msg.tracking
             };
           }
         } else {
-            data = {
-                status:'error',
-                result: err.code,
-                tracking: msg.tracking
-              };
-              
+          data = {
+            status: "error",
+            result: err.code,
+            tracking: msg.tracking
+          };
         }
+        // console.log("test", JSON.stringify(res.body));
         bus.emit("response", data);
-        bus.emit("response_log", data);
+        // bus.emit("response_log", data);
       }
     );
   });
-  bus.on("response_log", msg => {
-    console.log("response_log %s ====> %s", msg.tracking,msg.status);
-    let trackingBatch = "INSERT INTO booking_tracking_batch(tracking, status, send_record_at) VALUES (?, ?, ?)";
-    let data = [msg.tracking,msg.status, new Date()];
-    connection.query(trackingBatch, data, (err, results) => {});
-  });
 
   bus.on("response", msg => {
-    console.log("response", msg.tracking);
+    console.log("response", JSON.stringify(msg));
     var responseCode = msg.result.manifestResponse.bd.responseStatus.code;
     var responseMessage = msg.result.manifestResponse.bd.responseStatus.message;
-    console.log("responseCode %s ====> %s", msg.tracking,responseCode);
+    // console.log("responseCode %s ====> %s", msg.tracking, responseCode);
     var booking_status = 0;
 
     if (msg.status == "pass") {
@@ -285,10 +214,18 @@ module.exports = bus => {
     } else {
       booking_status = 5;
     }
+    if (booking_status === 100) {
+      let updateReceiver =
+        "UPDATE billing_receiver_info SET booking_status=?,booking_date=? WHERE tracking=?";
+      let dataReceiver = [booking_status, new Date(), msg.tracking];
+      connection.query(updateReceiver, dataReceiver, (err, results) => {});
+    }
 
-    let updateReceiver = "UPDATE billing_receiver_info SET booking_status=?,booking_date=? WHERE tracking=?";
-    let dataReceiver = [booking_status, new Date(), msg.tracking];
-    connection.query(updateReceiver, dataReceiver, (err, results) => {});
+    let updateBookingBatch =
+      "UPDATE booking_tracking_batch SET status=?,response_record_at=?,res_json=? WHERE tracking=? AND status=?";
+    let dataBookingBatch = [responseMessage,new Date(),JSON.stringify(msg.result),msg.tracking,"booking"];
+    connection.query(updateBookingBatch, dataBookingBatch, (err, results) => {
+      console.log("testttttt", err);
+    });
   });
-
 };
