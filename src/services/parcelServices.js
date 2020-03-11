@@ -89,7 +89,7 @@ module.exports = {
   },
   listBillingNotBooked: () => {
     var sqlBilling = "SELECT billing_no FROM billing WHERE status = ?";
-    var data = ["booking"];
+    var data = ["checking"];
     return new Promise(function(resolve, reject) {
       connection.query(sqlBilling, data, (error, results, fields) => {
         if (error === null) {

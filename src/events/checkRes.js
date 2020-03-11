@@ -49,10 +49,15 @@ module.exports = bus => {
             if (results[i].booking_status == 5) {
               c_pass = false;
             }
+            if (results[i].booking_status == null) {
+              c_pass = false;
+            }
           }
 
           if (c_pass) {
             bus.emit("update_booked", results[0].billing_no);
+          } else {
+            bus.emit("update_default_state", results[0].billing_no);
           }
         }
       }
@@ -63,6 +68,13 @@ module.exports = bus => {
     var billing_no = msg;
     let sqlBilling = "UPDATE billing SET status=? WHERE billing_no=?";
     let data = ["booked", billing_no];
+    connection.query(sqlBilling, data, (err, results) => {});
+  });
+  bus.on("update_default_state", msg => {
+    console.log(msg);
+    var billing_no = msg;
+    let sqlBilling = "UPDATE billing SET status=? WHERE billing_no=?";
+    let data = ["complete", billing_no];
     connection.query(sqlBilling, data, (err, results) => {});
   });
 };
