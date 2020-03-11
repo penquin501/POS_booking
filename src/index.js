@@ -11,7 +11,7 @@ const moment = require("moment");
 const m = require("moment-timezone");
 var events = require("events");
 
-const port = process.env.PORT || 3200;
+const port = process.env.PORT || 3000;
 
 moment.locale("th");
 app.use(express.json());

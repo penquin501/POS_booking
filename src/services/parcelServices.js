@@ -104,14 +104,13 @@ module.exports = {
   getBookingLog: () => {
     var current_date = momentTimezone(new Date()).tz("Asia/Bangkok").format("YYYY-MM-DD", true);
     var sqlBilling = "SELECT bb.tracking, bb.status, bi.tracking, bi.billing_no,bi.cod_value,br.receiver_name,br.phone,br.receiver_address,"+
-    "d.DISTRICT_CODE,d.DISTRICT_NAME,a.AMPHUR_CODE,a.AMPHUR_NAME,p.PROVINCE_CODE,p.PROVINCE_NAME,z.zipcode "+
+    "d.DISTRICT_NAME,a.AMPHUR_NAME,p.PROVINCE_NAME,br.zipcode "+
     "FROM booking_tracking_batch bb "+
     "LEFT JOIN billing_item bi ON bb.tracking=bi.tracking "+
     "LEFT JOIN billing_receiver_info br ON bi.tracking=br.tracking "+
     "LEFT JOIN postinfo_district d ON br.district_id=d.DISTRICT_ID AND br.amphur_id=d.AMPHUR_ID AND br.province_id=d.PROVINCE_ID "+
-    "LEFT JOIN postinfo_amphur a ON d.amphur_id=a.AMPHUR_ID "+
-    "LEFT JOIN postinfo_province p ON d.province_id=p.PROVINCE_ID "+
-    "LEFT JOIN postinfo_zipcodes z ON d.DISTRICT_CODE=z.district_code "+
+    "LEFT JOIN postinfo_amphur a ON br.amphur_id=a.AMPHUR_ID "+
+    "LEFT JOIN postinfo_province p ON br.province_id=p.PROVINCE_ID "+
     "WHERE Date(bb.send_record_at)=?";
     var data = [current_date];
     return new Promise(function(resolve, reject) {
