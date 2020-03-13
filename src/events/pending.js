@@ -37,7 +37,6 @@ module.exports = bus => {
   }
 
   function isMatched(defaultValue,bi_type,br_type,bi_zipcode,br_zipcode,cod_value,resultList = null,check_tracking){
-    console.log("testttttt",defaultValue,bi_zipcode,br_zipcode,check_tracking);
     var out = [];
     if (resultList != null) {
       out = resultList;
@@ -95,7 +94,6 @@ module.exports = bus => {
     connection.query(sqlBilling, dataBilling, function(err, resultBilling) {
       if (resultBilling.length > 0) {
         connection.query(sqlItem, dataItem, (err, resultsItem) => {
-          console.log(err);
           if (resultsItem.length > 0) {
             
             var resultList = [];
@@ -146,11 +144,10 @@ module.exports = bus => {
     // console.log("get_token", msg);
     request(
       {
-        url:
-          "https://www.945holding.com/webservice/restful/3thparty/dhl/v11/gettoken",
+        url: PROCESS_GET_TOKEN,
         method: "POST",
         headers: {
-          apikey: "XbOiHrrpH8aQXObcWj69XAom1b0ac5eda2b"
+          apikey: APIKEY
         },
         json: true
       },
@@ -254,15 +251,15 @@ module.exports = bus => {
     var data = {};
     request(
       {
-        // url: "https://api.dhlecommerce.dhl.com/rest/v3/Shipment",
-        url: "https://tool-uat.945parcel.com/test-dhl-response",
+        // url: DHL_API,
+        url: DHL_API_TEST,
         method: "POST",
         body: msg.data,
         json: true
       },
       (err, res, body) => {
         if (err === null) {
-          console.log(res.statusCode);
+
           if (res.statusCode == 200) {
             data = {
               status: "pass",
@@ -283,9 +280,7 @@ module.exports = bus => {
             tracking: msg.tracking
           };
         }
-        // console.log("test", JSON.stringify(res.body));
         bus.emit("response", data);
-        // bus.emit("response_log", data);
       }
     );
   });

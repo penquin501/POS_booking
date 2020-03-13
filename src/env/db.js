@@ -1,14 +1,10 @@
 var mysql = require('mysql');
 var connection = mysql.createPool({
     connectionLimit : 10,
-    host: '178.128.80.22',
-    user: 'parceldev',
-    password: '123456',
-    database: 'parcel',
-    // host: '178.128.80.22',
-    // user: 'admin',
-    // password: '4a04047f35404a37b150bc21e69de4c6',
-    // database: 'parcel',
+    host : process.env.MYSQL_HOST,
+    user : process.env.MYSQL_USERNAME,
+    password : process.env.MYSQL_PASSWORD,
+    database : process.env.MYSQL_DATABASE_NAME,
     debug : false,
     timezone : '+07:00'
 });

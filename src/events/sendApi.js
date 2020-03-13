@@ -46,11 +46,10 @@ module.exports = bus => {
     console.log("get_token", msg);
     request(
       {
-        url:
-          "https://www.945holding.com/webservice/restful/3thparty/dhl/v11/gettoken",
+        url: PROCESS_GET_TOKEN,
         method: "POST",
         headers: {
-          apikey: "XbOiHrrpH8aQXObcWj69XAom1b0ac5eda2b"
+          apikey: APIKEY
         },
         json: true
       },
@@ -65,7 +64,6 @@ module.exports = bus => {
   });
 
   bus.on("set_json", msg => {
-    // console.log("set_json", msg.data.data);
 
     let data = msg.data.data;
 
@@ -143,13 +141,12 @@ module.exports = bus => {
       tracking: data.tracking,
       data: dataJsonDHL
     };
-    // console.log(JSON.stringify(info));
     bus.emit("send_api", info);
     bus.emit("response_log", info);
   });
 
   bus.on("response_log", msg => {
-    console.log("response_log %s", msg);
+    console.log("response_log %s", msg.tracking);
     let trackingBatch =
       "INSERT INTO booking_tracking_batch(tracking, status, send_record_at, prepare_json) VALUES (?, ?, ?, ?)";
     let data = [msg.tracking, "booking", new Date(), JSON.stringify(msg.data)];
@@ -162,15 +159,14 @@ module.exports = bus => {
     var data = {};
     request(
       {
-        // url: "https://api.dhlecommerce.dhl.com/rest/v3/Shipment",
-        url: "https://tool-uat.945parcel.com/test-dhl-response",
+        // url: DHL_API,
+        url: DHL_API_TEST,
         method: "POST",
         body: msg.data,
         json: true
       },
       (err, res, body) => {
         if (err === null) {
-          console.log(res.statusCode);
           if (res.statusCode == 200) {
             data = {
               status: "pass",
@@ -191,7 +187,7 @@ module.exports = bus => {
             tracking: msg.tracking
           };
         }
-        // console.log("test", JSON.stringify(res.body));
+
         bus.emit("response", data);
         // bus.emit("response_log", data);
       }
@@ -199,10 +195,10 @@ module.exports = bus => {
   });
 
   bus.on("response", msg => {
-    console.log("response", JSON.stringify(msg));
+    // console.log("response", JSON.stringify(msg));
     var responseCode = msg.result.manifestResponse.bd.responseStatus.code;
     var responseMessage = msg.result.manifestResponse.bd.responseStatus.message;
-    // console.log("responseCode %s ====> %s", msg.tracking, responseCode);
+
     var booking_status = 0;
 
     if (msg.status == "pass") {
@@ -224,8 +220,6 @@ module.exports = bus => {
     let updateBookingBatch =
       "UPDATE booking_tracking_batch SET status=?,response_record_at=?,res_json=? WHERE tracking=? AND status=?";
     let dataBookingBatch = [responseMessage,new Date(),JSON.stringify(msg.result),msg.tracking,"booking"];
-    connection.query(updateBookingBatch, dataBookingBatch, (err, results) => {
-      console.log("testttttt", err);
-    });
+    connection.query(updateBookingBatch, dataBookingBatch, (err, results) => {});
   });
 };

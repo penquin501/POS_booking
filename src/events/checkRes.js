@@ -5,36 +5,6 @@ const moment = require("moment");
 const momentTimezone = require("moment-timezone");
 
 module.exports = bus => {
-  bus.on("check_res", msg => {
-    console.log("check_res", msg.tracking);
-    var res_json = JSON.parse(msg.res_json);
-
-    var responseCode = res_json.manifestResponse.bd.responseStatus.code;
-    var responseMessage = res_json.manifestResponse.bd.responseStatus.message;
-    var booking_status = 0;
-    var status = "";
-    if (msg.status == "pass") {
-      if (responseCode == 200 && responseMessage == "SUCCESS") {
-        booking_status = 100;
-        status = "booked";
-      } else {
-        booking_status = 5;
-        status = "fail";
-      }
-    } else {
-      booking_status = 5;
-      status = "fail";
-    }
-
-    let updateReceiver = "UPDATE billing_receiver_info SET booking_status=?,booking_date=? WHERE tracking=?";
-    let dataReceiver = [booking_status, new Date(), msg.tracking];
-    connection.query(updateReceiver, dataReceiver, (err, results) => {});
-
-    let updateTrackingBatch = "UPDATE booking_tracking_batch SET status=? WHERE tracking=?";
-    let dataTrackingBatch = [status, msg.tracking];
-    connection.query(updateTrackingBatch,dataTrackingBatch,(err, results) => {});
-  });
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   bus.on("check_status_billing", msg => {
     console.log("check_status_billing", msg.billing_no);
     let sqlItem =
@@ -64,14 +34,14 @@ module.exports = bus => {
     });
   });
   bus.on("update_booked", msg => {
-    console.log(msg);
+    console.log("update_booked=>",msg);
     var billing_no = msg;
     let sqlBilling = "UPDATE billing SET status=? WHERE billing_no=?";
     let data = ["booked", billing_no];
     connection.query(sqlBilling, data, (err, results) => {});
   });
   bus.on("update_default_state", msg => {
-    console.log(msg);
+    console.log("update_default_state=>",msg);
     var billing_no = msg;
     let sqlBilling = "UPDATE billing SET status=? WHERE billing_no=?";
     let data = ["complete", billing_no];
