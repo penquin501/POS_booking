@@ -6,8 +6,8 @@ module.exports = bus => {
   bus.on("prepare_check_data", msg => {
     console.log("checking....", msg.billingNo);
 
-    let updateBilling = "UPDATE billing SET status=? WHERE billing_no=?";
-    let data = ["checking", msg.billingNo];
+    let updateBilling = "UPDATE billing SET status=? WHERE billing_no=? AND status=?";
+    let data = ["checking", msg.billingNo,"complete"];
     connection.query(updateBilling, data, (err, results) => {
       if (results.affectedRows > 0) {
         bus.emit("check_data", msg.billingNo);
@@ -22,12 +22,12 @@ module.exports = bus => {
     }
     if (data[key] == "") {
       // out.push("" + check_tracking + " empty");
-      console.log("" + check_tracking + " empty");
+      console.log("" + check_tracking + " "+ key+" empty");
       return false;
     }
     if (data[key] == null) {
       // out.push("" + check_tracking + " missing");
-      console.log("" + check_tracking + " missing");
+      console.log("" + check_tracking + " "+key+" missing");
       return false;
     }
 
@@ -141,13 +141,12 @@ module.exports = bus => {
   });
 
   bus.on("get_token", msg => {
-    // console.log("get_token", msg);
     request(
       {
-        url: PROCESS_GET_TOKEN,
+        url: process.env.W945_GET_DHL_TOKEN_API,
         method: "POST",
         headers: {
-          apikey: APIKEY
+          apikey: process.env.W945_GET_DHL_TOKEN_APIKEY
         },
         json: true
       },
@@ -162,7 +161,7 @@ module.exports = bus => {
   });
 
   bus.on("set_json", msg => {
-    console.log("set_json", msg.data.tracking);
+    // console.log("set_json", msg);
 
     let data = msg.data;
 
@@ -226,13 +225,12 @@ module.exports = bus => {
     if (data.bi_parcel_type == "COD") {
       dataJsonDHL.manifestRequest.bd.shipmentItems[0].codValue = Math.floor(data.cod_value).toFixed(2);
     }
-    // console.log(JSON.stringify(dataJsonDHL));
+
     var info = {
       tracking: data.tracking,
       data: dataJsonDHL
     };
 
-    // console.log(JSON.stringify(info));
     bus.emit("send_api", info);
     bus.emit("response_log", info);
   });
@@ -251,8 +249,7 @@ module.exports = bus => {
     var data = {};
     request(
       {
-        // url: DHL_API,
-        url: DHL_API_TEST,
+        url: process.env.DHL_API,
         method: "POST",
         body: msg.data,
         json: true
@@ -286,13 +283,15 @@ module.exports = bus => {
   });
 
   bus.on("response", msg => {
-    console.log("response", msg.tracking);
-    var responseCode = msg.result.manifestResponse.bd.responseStatus.code;
-    var responseMessage = msg.result.manifestResponse.bd.responseStatus.message;
-    // console.log("responseCode %s ====> %s", msg.tracking, responseCode);
+    console.log("response", msg.result);
     var booking_status = 0;
+    var responseCode=0;
+    var responseMessage="";
 
     if (msg.status == "pass") {
+      responseCode = msg.result.manifestResponse.bd.responseStatus.code;
+      responseMessage = msg.result.manifestResponse.bd.responseStatus.message;
+
       if (responseCode == 200 && responseMessage == "SUCCESS") {
         booking_status = 100;
       } else {
@@ -303,8 +302,8 @@ module.exports = bus => {
     }
     if (booking_status === 100) {
       let updateReceiver =
-        "UPDATE billing_receiver_info SET status=?,booking_status=?,booking_date=? WHERE tracking=?";
-      let dataReceiver = ['booked',booking_status, new Date(), msg.tracking];
+        "UPDATE billing_receiver_info SET status=?,booking_status=?,booking_date=? WHERE tracking=? AND status=?";
+      let dataReceiver = ['booked',booking_status, new Date(), msg.tracking,'ready'];
       connection.query(updateReceiver, dataReceiver, (err, results) => {});
     }
 

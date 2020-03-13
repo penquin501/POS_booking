@@ -36,15 +36,15 @@ module.exports = bus => {
   bus.on("update_booked", msg => {
     console.log("update_booked=>",msg);
     var billing_no = msg;
-    let sqlBilling = "UPDATE billing SET status=? WHERE billing_no=?";
-    let data = ["booked", billing_no];
+    let sqlBilling = "UPDATE billing SET status=? WHERE billing_no=? AND status=?";
+    let data = ["booked", billing_no,"checking"];
     connection.query(sqlBilling, data, (err, results) => {});
   });
   bus.on("update_default_state", msg => {
     console.log("update_default_state=>",msg);
     var billing_no = msg;
-    let sqlBilling = "UPDATE billing SET status=? WHERE billing_no=?";
-    let data = ["complete", billing_no];
+    let sqlBilling = "UPDATE billing SET status=? WHERE billing_no=? AND status=?";
+    let data = ["complete", billing_no,"checking"];
     connection.query(sqlBilling, data, (err, results) => {});
   });
 };
