@@ -213,7 +213,7 @@ module.exports = bus => {
                 address3: listAddress[2] in listAddress ? listAddress[2] : "-",
                 state: data.PROVINCE_NAME,
                 district: data.AMPHUR_NAME,
-                postCode: data.zipcode,
+                postCode: data.br_zipcode,
                 country: "TH",
                 phone: data.phone
               }
