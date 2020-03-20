@@ -223,7 +223,7 @@ module.exports = bus => {
       }
     };
     if (data.bi_parcel_type == "COD") {
-      dataJsonDHL.manifestRequest.bd.shipmentItems[0].codValue = Math.floor(data.cod_value).toFixed(2);
+      dataJsonDHL.manifestRequest.bd.shipmentItems[0].codValue = parseFloat(data.cod_value);
     }
 
     var info = {
@@ -245,7 +245,6 @@ module.exports = bus => {
 
   bus.on("send_api", msg => {
     console.log("send_api", msg.tracking);
-
     var data = {};
     request(
       {
