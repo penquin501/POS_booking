@@ -164,8 +164,7 @@ module.exports = bus => {
     // console.log("set_json", msg);
 
     let data = msg.data;
-
-    let address = data.receiver_address + " " + data.DISTRICT_NAME + " " + data.AMPHUR_NAME + " " + data.PROVINCE_NAME;
+    let address = data.receiver_address.trim() + " " + data.DISTRICT_NAME.trim() + " " + data.AMPHUR_NAME.trim() + " " + data.PROVINCE_NAME.trim();
 
     var address1 = "";
     var address2 = "";
@@ -182,7 +181,7 @@ module.exports = bus => {
       address2 = address.substring(60, 120);
       address3 = address.substring(120, 150);
     }
-    listAddress.push(address1, address2, address3);
+    listAddress.push(address1.trim(), address2.trim(), address3.trim());
     var dataJsonDHL = {
       manifestRequest: {
         hdr: {
@@ -206,11 +205,8 @@ module.exports = bus => {
               consigneeAddress: {
                 name: data.receiver_name,
                 address1: listAddress[0],
-                address2:
-                  listAddress[1] in listAddress
-                    ? listAddress[1]
-                    : data.DISTRICT_NAME,
-                address3: listAddress[2] in listAddress ? listAddress[2] : "-",
+                address2: (listAddress[1] != "") ? listAddress[1] : data.DISTRICT_NAME,
+                address3: (listAddress[2] != "") ? listAddress[2] : "-",
                 state: data.PROVINCE_NAME,
                 district: data.AMPHUR_NAME,
                 postCode: data.br_zipcode,
