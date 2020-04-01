@@ -203,9 +203,9 @@ module.exports = bus => {
               // codValue: Math.floor(codValue).toFixed(2),
               currency: "THB",
               consigneeAddress: {
-                name: data.receiver_name,
+                name: (data.receiver_name).trim().substring(0, 50),
                 address1: listAddress[0],
-                address2: (listAddress[1] != "") ? listAddress[1] : data.DISTRICT_NAME,
+                address2: (listAddress[1] != "") ? listAddress[1] : data.DISTRICT_NAME.trim(),
                 address3: (listAddress[2] != "") ? listAddress[2] : "-",
                 state: data.PROVINCE_NAME,
                 district: data.AMPHUR_NAME,
