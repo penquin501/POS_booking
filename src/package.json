@@ -13,7 +13,7 @@
   "dependencies": {
     "dotenv": "^8.2.0",
     "excel4node": "^1.7.2",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.28",
     "mysql": "^2.18.1",
